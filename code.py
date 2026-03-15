@@ -243,7 +243,7 @@ while True:
         if batteryVoltage < 3.7 and not batteryWarn:
             logger.debug("We need to warn")
             batteryWarn = True
-            do_publish(batteryWarn, f"{batteryVoltage}")
+            do_publish(batteryWarn, 3.7)
         elif batteryVoltage >= 3.7 and batteryWarn:
             logger.debug("We need to reset the warn flag")
             batteryWarn = False
@@ -253,3 +253,4 @@ while True:
         batteryCheck = time.monotonic()
 
     time.sleep(0.25)
+
