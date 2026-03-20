@@ -65,7 +65,8 @@ opticalInput = "Play?url=Capture%3Ahw%3Aimxspdif%2C0%2F1%2F25%2F2%3Fid%3Dinput1&
 hdmiInput = "Play?url=Capture%3Ahw%3Aimxspdif%2C0%2F1%2F25%2F2%3Fid%3Dinput2&preset_id&image=/images/capture/ic_hdmi.png"
 volumeQuery = "Volume"
 volumeChange = "Volume?level="
-aloha_joe = "Play?url=TuneIn%3As49372&preset_id&image=http://cdn-radiotime-logos.tunein.com/s49372g.png"
+aloha_joe_play = "Play?url=TuneIn%3As49372&preset_id&image=http://cdn-radiotime-logos.tunein.com/s49372g.png"
+aloha_joe_pause = "Pause?url=TuneIn%3As49372&preset_id&image=http://cdn-radiotime-logos.tunein.com/s49372g.png"
 
 # ---- MQTT ---- #
 # Config
@@ -133,6 +134,9 @@ my_mqtt.on_unsubscribe = on_unsubscribe
 my_mqtt.on_publish = on_publish
 my_mqtt.on_message = on_message
 
+# Feeds
+battery_feed = os.getenv("battery_feed")
+
 # ---- Helpers ---- #
 # Return the last volume level
 def get_volume():
@@ -147,8 +151,8 @@ batteryCheckWait = 60
 batteryCheck = None
 batteryWarn = False
 def monitor_battery():
-    batVoltage = batMon.cell_voltage
-    batPercentage = batMon.cell_percent
+    batVoltage = round(batMon.cell_voltage, 1)
+    batPercentage = round(batMon.cell_percent, 2)
     return batVoltage, batPercentage
 
 # Handle all MQTT publish requests
@@ -176,31 +180,41 @@ def send_request(url):
 
 # ---- Startup ---- #
 my_mqtt.connect()
-volumeLevel = get_volume()  # get current volume level
-volume = int(volumeLevel)  # convert to an int for maths
+increment = int(volume_increment)  # mirror the Android app, increase volume by 2 with each turn
+is_playing = False
 logger.info("Bluesound companion starting up!")
 
 while True:
     position = -encoder.position    # turn clockwise to increase, counter-clockwise to decrease
-    increment = int(volume_increment)                   # mirror the Android app, increase volume by 2 with each turn
 
     # Setting the volume on the bluesound node does not directly relate to the position of the
     # rotary encoder. We set this to determine if volume should be increased or decreased
     if last_position is None:
         last_position = position
-        logger.debug(f"position is {position} and last_position is {last_position} and volume is {volume}")
+        logger.debug(f"position is {position} and last_position is {last_position}")
 
     if last_position != position:
+        logger.debug(f"last position {last_position} does not equal position {position}")
+        volumeLevel = get_volume()  # get current volume level
+        volume = int(volumeLevel)  # convert to an int for maths
+        logger.debug(f"volume is {volume}")
         if position < last_position:    # lower the volume
+            logger.debug(f"{position} < {last_position}")
             last_position = position
+            logger.debug(f"last position is {last_position}")
             new_volume = volume - int(volume_increment)
+            logger.debug(f"new_volume is {new_volume}")
             if new_volume >= 0:
                 volume_url = f"{baseURL}{volumeChange}{new_volume}"
                 send_request(volume_url)
         elif position > last_position:  # increase the volume
+            logger.debug(f"{position} > {last_position}")
             last_position = position
+            logger.debug(f"last position is {last_position}")
             new_volume = volume + int(volume_increment)
+            logger.debug(f"new_volume is {new_volume}")
             if new_volume <= 100:
+                logger.debug(f"new_volume is less than or equal to 100")
                 volume_url = f"{baseURL}{volumeChange}{new_volume}"
                 send_request(volume_url)
 
@@ -233,8 +247,14 @@ while True:
         send_request(keypad_url)
     if keypad[3]:       # Play TuneIn favorite Aloha Joe Radio
         logger.debug("tuning in to Aloha Joe Radio")
-        keypad_url = baseURL + aloha_joe
-        send_request(keypad_url)
+        if not is_playing:
+            keypad_url = baseURL + aloha_joe_play
+            send_request(keypad_url)
+            is_playing = True
+        else:
+            keypad_url = baseURL + aloha_joe_pause
+            send_request(keypad_url)
+            is_playing = False
 
     # Check the voltage of the battery, send a message to MQTT if it's below 3.7V
     if batteryCheck is None or time.monotonic() > batteryCheck + batteryCheckWait:
@@ -243,9 +263,10 @@ while True:
         if batteryVoltage < 3.7 and not batteryWarn:
             logger.debug("We need to warn")
             batteryWarn = True
-            do_publish(batteryWarn, 3.7)
-        elif batteryVoltage >= 3.7 and batteryWarn:
+            do_publish(battery_feed, batteryVoltage)
+        elif batteryVoltage >= 4.0 and batteryWarn:
             logger.debug("We need to reset the warn flag")
+            do_publish(battery_feed, batteryVoltage)
             batteryWarn = False
         else:
             logger.debug(f"battery warning {batteryVoltage:.2f} Volts, and battery warn is {batteryWarn}")

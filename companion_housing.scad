@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MIT
+$fa = 1;
+$fs = 0.4;
 
 include <YAPP_Box/YAPPgenerator_v3.scad>
 
@@ -21,8 +23,8 @@ pcbThickness = 2.1;
 //-- padding between pcb and inside wall
 paddingFront = 5;
 paddingBack = 5;
-paddingRight = 5;
-paddingLeft = 3;
+paddingRight = 10;
+paddingLeft = 5;
 
 wallThickness = 2.4;
 basePlaneThickness = 4.0;
@@ -46,15 +48,15 @@ pcb = [
 ];
 
 pcbStands = [
-   [2, 3.25, standoffHeight, default, standoffDiameter, 2, yappAllCorners]
-   ,[38, 16, 29, 3, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]   // Left back keyboard
-   ,[58, 16, 29, 3, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]   // Left front keyboard
-   ,[38, 53, 29, 3, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]   // Right back keyboard
-   ,[58, 53, 29, 3, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]   // Right front keyboard
-   ,[7, 17, 25, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]    // Left back rotary
-   ,[7, 37.5, 25, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]    // Right back rotary
-   ,[27.25, 17, 25, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]    // Left front rotary
-   ,[27.25, 37.5, 25, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]    // Right front rotary
+   [2, 3.25, standoffHeight, default, standoffDiameter, 2, yappAllCorners, yappBaseOnly, yappHole, yappSelfThreading]
+   , [39.25, 18.5, 29, 3, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]   // Left back keyboard
+   ,[55.75, 18.5, 29, 3, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]   // Left front keyboard
+   ,[39.25, 56.5, 29, 3, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]   // Right back keyboard
+   ,[55.75, 56.5, 29, 3, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]   // Right front keyboard
+   ,[7, 17, 25, yappLidOnly, yappHole, yappSelfThreading]    // Left back rotary
+   ,[7, 37.5, 25, yappLidOnly, yappHole, yappSelfThreading]    // Right back rotary
+   ,[27.25, 17, 25, yappLidOnly, yappHole, yappSelfThreading]    // Left front rotary
+   ,[27.25, 37.5, 25, yappLidOnly, yappHole, yappSelfThreading]    // Right front rotary
    ];
 
 cutoutsBase = [
@@ -62,11 +64,11 @@ cutoutsBase = [
    ];
 
 cutoutsLeft = [
-   [11, 3.5,  12, 8, 0, yappRectangle, yappCenter, yappCoordPCB]  // USB power
+   [11, 2,  12, 8, 0, yappRectangle, yappCenter, yappCoordPCB]  // USB power
    ];
 
 cutoutsLid = [
-   [40.5, -1, 15, 72 , 0, yappRectangle]    // Keyboard
+   [40, 1, 15, 73 , 0, yappRectangle]    // Keyboard
    ,[11, 21, 0, 0, 6, yappCircle]         // Rotary Encoder
    ];
 
@@ -75,12 +77,59 @@ snapJoins = [
    ,[shellWidth / 2, 5, yappFront, yappBack, yappSymmetric, yappRectangle]
    ];
 
-labelsPlane = [
-   [38, 21, 90, 1, yappLid, "Liberation Mono:style=bold", 4, "VOL/MUTE"]
-   ,[67, 6, 90, 1, yappLid, "liberation Mono:style=bold", 3, "OPTICAL"]
-   ,[67, 28, 90, 1, yappLid, "liberation Mono:style=bold", 3, "HDMI"]
-   ,[67, 66, 90, 1, yappLid, "liberation Mono:style=bold", 3, "ALOHA"]
-   ,[71, 68, 90, 1, yappLid, "liberation Mono:style=bold", 3, "JOE"]
-   ];
+// labelsPlane = [
+//    [38, 21, 90, 1, yappLid, "Liberation Mono:style=bold", 4, "VOL/MUTE"]
+//    ,[67, 6, 90, 1, yappLid, "liberation Mono:style=bold", 3, "OPTICAL"]
+//    ,[67, 28, 90, 1, yappLid, "liberation Mono:style=bold", 3, "HDMI"]
+//    ,[67, 66, 90, 1, yappLid, "liberation Mono:style=bold", 3, "ALOHA"]
+//    ,[71, 68, 90, 1, yappLid, "liberation Mono:style=bold", 3, "JOE"]
+//    ];
 
-YAPPgenerate();
+module key_plate() {
+    cube([73, 10, 2], center=true);
+    translate([-35.5, -1.5, 1 - 0.01])
+    linear_extrude(1)
+        color("blue")text("OPT", font = "Liberation Sans", size = 4.5);
+    translate([-15, -1.5, 1 - 0.01])
+    linear_extrude(1)
+        color("blue")text("HDMI", font = "Liberation Sans", size = 4.5);
+    translate([17, 0.5, 1 - 0.01])
+    linear_extrude(1)
+        color("blue")text("ALOHA", font = "Liberation Sans", size = 4);
+    translate([21, -4.25, 1 - 0.01])
+    linear_extrude(1)
+        color("blue")text("JOE", font = "Liberation Sans", size = 4);
+}
+
+module volume_plate() {
+    cube([20, 14, 2], center=true);
+    translate([-7, 1.5, 1 - 0.01])
+    linear_extrude(1)
+        color("red")text("VOL /", font = "Liberation Sans", size = 4.5);
+    translate([-8.5, -5, 1 - 0.01])
+    linear_extrude(1)
+        color("red")text("MUTE", font = "Liberation Sans", size = 4.5);
+}
+
+// Set to true if you want to create separate lable plates for the project
+show_all = false;
+show_labels = false;
+show_case = true;
+
+if (show_all == true) {
+    YAPPgenerate();
+    translate([40, -15, 0])
+        key_plate();
+    translate([40, -30, 0])
+        volume_plate();
+}
+
+if (show_case == true) {
+    YAPPgenerate();
+}
+
+if (show_labels == true) {
+    key_plate();
+    translate([0, -20, 0])
+        volume_plate();
+}
